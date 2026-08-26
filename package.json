@@ -1,0 +1,8 @@
+{
+  "name":"beulah-medical-clinic",
+  "version":"1.0.0",
+  "private":true,
+  "description":"Beulah Medical Clinic local portal",
+  "scripts":{"start":"node server.js"},
+  "engines":{"node":">=18"}
+}

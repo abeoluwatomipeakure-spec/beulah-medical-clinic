@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Beulah Medical Clinic — connected healthcare for individuals and families.">
+<title>Beulah Medical Clinic</title>
+<link rel="stylesheet" href="script.css?v=20260826-final-1">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo-mark" aria-label="Caduceus logo">
+      <img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Caduceus_color.svg" alt="Caduceus medical symbol">
+    </div>
+    <div>
+      <div class="brand-title">BEULAH MEDICAL CLINIC</div>
+      <div class="brand-tag">We Care <span>•</span> God Heals</div>
+    </div>
+  </div>
+  <div class="clinic-contact">
+    <span>📍 Kajola off Oda Road, Akure, Ondo State</span>
+    <span>☎ 07039849180</span>
+    <span>☎ 08169005121</span>
+    <span>✉ oyedeleabe@gmail.com</span>
+  </div>
+  <button class="menu-button" onclick="toggleMenu()">☰</button>
+</header>
+
+<div id="mobileMenu" class="mobile-menu">
+  <a href="#home" onclick="toggleMenu()">Home</a>
+  <a href="#services" onclick="toggleMenu()">Services</a>
+  <a href="#portals" onclick="toggleMenu()">Portals</a>
+  <a href="#contact" onclick="toggleMenu()">Contact</a>
+  <button onclick="openLogin('patient');toggleMenu()">Patient Login</button>
+  <button onclick="openLogin('staff');toggleMenu()">Clinic Team Login</button>
+</div>
+
+<main>
+<section id="homePage" class="page active">
+  <section class="system-hero" id="home">
+    <aside class="sidebar-card">
+      <div class="sidebar-title">PORTAL ACCESS</div>
+      <button class="side-link active" onclick="goHome()">⌂ <span>Home</span></button>
+      <button class="side-link" onclick="openLogin('staff')">▦ <span>Dashboard</span></button>
+      <button class="side-link" onclick="openLogin('patient')">▣ <span>Appointments</span></button>
+      <button class="side-link" onclick="openLogin('staff')">♙ <span>Patients</span></button>
+      <button class="side-link" onclick="openLogin('doctor')">▤ <span>Medical Records</span></button>
+      <button class="side-link" onclick="openLogin('doctor')">Rx <span>Prescriptions</span></button>
+      <button class="side-link" onclick="openLogin('staff')">▭ <span>Payments</span></button>
+      <button class="side-link" onclick="openLogin('staff')">♡ <span>Vitals</span></button>
+      <button class="side-link" onclick="openEmergency()">🚨 <span>Emergencies</span></button>
+      <button class="side-link" onclick="openLogin('admin')">▥ <span>Reports</span></button>
+      <button class="side-link" onclick="openLogin('admin')">◷ <span>Audit Trail</span></button>
+      <button class="side-link" onclick="openLogin('admin')">⚙ <span>Settings</span></button>
+    </aside>
+
+    <div class="system-content">
+      <div class="system-heading">
+        <span class="eyebrow">BEULAH MEDICAL CLINIC</span>
+        <h1>Administrator <span>→</span> Staff / Doctor <span>→</span> Patient</h1>
+        <p>One connected clinic system with separate, secure workspaces for every role.</p>
+      </div>
+
+      <div class="workspace-grid">
+        <article class="workspace admin-workspace">
+          <div class="workspace-head orange-head"><b>1. ADMINISTRATOR</b><small>System Owner / Full Access</small></div>
+          <div class="workspace-body">
+            <span class="mini-label">ADMIN DASHBOARD</span>
+            <div class="mini-stats">
+              <div><strong>—</strong><small>Staff</small></div><div><strong>—</strong><small>Doctors</small></div><div><strong>—</strong><small>Patients</small></div>
+            </div>
+            <h4>Quick Actions</h4>
+            <button onclick="openLogin('admin')">+ Add Staff</button>
+            <button onclick="openLogin('admin')">+ Add Doctor</button>
+            <button onclick="openLogin('admin')">▧ View All Patients</button>
+            <button onclick="openLogin('admin')">◷ Audit Trail</button>
+          </div>
+        </article>
+
+        <article class="workspace team-workspace">
+          <div class="workspace-head green-head"><b>2. STAFF / DOCTOR</b><small>Manage Records / Provide Care</small></div>
+          <div class="workspace-body split-workspace">
+            <div>
+              <h4>STAFF WORKSPACE</h4>
+              <div class="queue-row"><b>Today's Queue</b><span>Manage</span></div>
+              <button onclick="openLogin('staff')">+ Register Patient</button>
+              <button onclick="openLogin('staff')">▣ Record Vitals</button>
+              <button onclick="openLogin('staff')">▭ Record Payment</button>
+            </div>
+            <div>
+              <h4>DOCTOR WORKSPACE</h4>
+              <div class="doctor-summary-box"><b>Patient Summary</b><span>Appointments</span><span>Prescriptions</span><span>Payments</span><span>Last Visit</span></div>
+              <button onclick="openLogin('doctor')">▧ View Full Record</button>
+              <button onclick="openLogin('doctor')">Rx Prescribe Medication</button>
+              <button onclick="openLogin('doctor')">✓ Change Appt. Status</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="workspace patient-workspace">
+          <div class="workspace-head blue-head"><b>3. PATIENT PORTAL</b><small>View Your Health Information</small></div>
+          <div class="workspace-body">
+            <div class="patient-welcome"><div><small>WELCOME</small><strong>Patient Portal</strong><span>Personal / Family Card</span></div><div class="avatar">●</div></div>
+            <div class="patient-actions">
+              <button onclick="openLogin('patient')">▣<small>My Appointments</small></button>
+              <button onclick="openLogin('patient')">Rx<small>Prescriptions</small></button>
+              <button onclick="openLogin('patient')">▭<small>Payments</small></button>
+              <button onclick="openLogin('patient')">♥<small>Health Records</small></button>
+              <button onclick="openLogin('patient')">♟<small>My Family Card</small></button>
+              <button onclick="openEmergency()">🚨<small>Emergency</small></button>
+            </div>
+            <div class="appointment-preview"><b>Upcoming Appointment</b><span>Sign in to view your appointment details.</span></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="workflow-strip">
+        <div><b>1 Administrator</b><span>Creates staff & doctor accounts.</span></div><i>→</i>
+        <div><b>2 Staff Registers Patient</b><span>Creates personal or family card.</span></div><i>→</i>
+        <div><b>3 Staff Records Information</b><span>Vitals, payments and clinical information.</span></div><i>→</i>
+        <div><b>4 Doctor Provides Care</b><span>History, prescriptions and appointments.</span></div><i>→</i>
+        <div><b>Patient Access</b><span>Appointments, records and payments.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="quick-portals" id="portals">
+    <article class="portal-box patient-box">
+      <div><span>PATIENT PORTAL</span><h2>Your healthcare,<br><em>within reach.</em></h2><p>Use your Personal or Family Card Number and Card Type to access your clinic record.</p></div>
+      <div class="portal-actions"><button class="primary" onclick="openLogin('patient')">Patient Sign In</button></div>
+    </article>
+    <article class="portal-box team-box">
+      <div><span>CLINIC TEAM PORTAL</span><h2>Connected care,<br><em>securely managed.</em></h2><p>Staff, doctors and administrators have separate workspaces. Staff register patients; doctors provide care; administrators manage the system.</p></div>
+      <div class="portal-actions"><button onclick="openLogin('staff')">Staff Login</button><button onclick="openLogin('doctor')">Doctor Login</button><button onclick="openLogin('admin')">Administrator Login</button></div>
+    </article>
+  </section>
+
+  <section class="ad-slot-wrap" aria-label="Sponsored advertisement">
+    <div class="ad-label">SPONSORED</div>
+    <div class="ad-slot" data-ad-slot="home-top"><span>Advertisement</span></div>
+  </section>
+
+  <section class="section" id="services">
+    <div class="section-heading"><span>OUR SERVICES</span><h2>Care for your health, <em>every step of the way.</em></h2><p>Healthcare services designed around the needs of individuals and families.</p></div>
+    <div class="service-grid">
+      <article><b>🩺</b><h3>General Consultation</h3><p>Professional medical consultation and personalized healthcare guidance.</p><button onclick="openLogin('patient')">Book consultation →</button></article>
+      <article><b>♥</b><h3>Health Assessment</h3><p>Health checks and assessments to help you understand your wellbeing.</p><button onclick="openLogin('patient')">Book assessment →</button></article>
+      <article><b>♟</b><h3>Family Healthcare</h3><p>Separate personal records connected through a Family Card.</p><button onclick="openLogin('patient')">Family care →</button></article>
+      <article><b>✚</b><h3>Preventive Care</h3><p>Guidance and support for maintaining long-term health.</p><button onclick="openLogin('patient')">Learn more →</button></article>
+    </div>
+  </section>
+
+  <section class="section about" id="about">
+    <div class="section-heading"><span>ABOUT BEULAH</span><h2>Professional care with <em>compassion.</em></h2><p>Beulah Medical Clinic is designed around coordinated care for individuals and families, with clear separation between patient, clinical and administrative access.</p></div>
+    <div class="about-grid"><div>✓ Individual patient records</div><div>✓ Family-centered care</div><div>✓ Professional medical team</div><div>✓ Secure role-based access</div></div>
+  </section>
+
+  <section class="ad-slot-wrap compact-ad" aria-label="Sponsored advertisement">
+    <div class="ad-label">SPONSORED</div>
+    <div class="ad-slot" data-ad-slot="home-bottom"><span>Advertisement</span></div>
+  </section>
+
+  <section class="emergency-banner"><div><b>MEDICAL EMERGENCY?</b><h2>Don't wait for an appointment.</h2><p>If you have an urgent medical concern, contact the clinic or seek urgent medical care immediately.</p></div><button class="danger" onclick="openEmergency()">Emergency Assistance →</button></section>
+
+  <section class="section contact" id="contact"><div class="section-heading"><span>CONTACT US</span><h2>We're here when you need us.</h2></div><div class="contact-grid"><div><b>📍</b><h3>Visit Us</h3><p>Kajola off Oda Road, Akure, Ondo State</p></div><div><b>☎</b><h3>Call Us</h3><p>07039849180<br>08169005121</p></div><div><b>✉</b><h3>Email Us</h3><p>oyedeleabe@gmail.com</p></div></div></section>
+</section>
+
+<section id="loginPage" class="page">
+  <div class="auth-layout">
+    <div class="auth-side"><span class="eyebrow">BEULAH CLINIC PORTAL</span><h2>Connected care starts here.</h2><p>Choose the correct portal and use your clinic-issued credentials.</p><div class="auth-note"><b>Patient</b><span>Card Number + Personal or Family Card. No patient password.</span></div><div class="auth-note"><b>Staff / Doctor / Administrator</b><span>Clinic email + password.</span></div></div>
+    <div class="auth-card"><button class="close-page" onclick="goHome()">×</button><h2>Sign in</h2><div id="loginMessage"></div><label>Portal<select id="loginRole" onchange="updateLoginFields()"><option value="patient">Patient</option><option value="staff">Staff</option><option value="doctor">Doctor</option><option value="admin">Administrator</option></select></label><label id="patientCardTypeWrap">Card Type<select id="loginCardType"><option>Personal</option><option>Family</option></select></label><label id="loginIdentifierLabel">Card Number<input id="loginIdentifier" type="text" placeholder="Enter Card Number" autocomplete="off"></label><label id="loginPasswordWrap">Password<input id="loginPassword" type="password" placeholder="Enter password" autocomplete="current-password"></label><button class="primary full-button" onclick="login()">Sign in</button><p class="secure-note">Clinic credentials are not displayed on this page.</p><button class="outline full-button" onclick="goHome()">← Back to Home</button></div>
+  </div>
+</section>
+
+<section id="emergencyPage" class="page"><div class="emergency-page auth-card"><h2>🚨 Emergency Request</h2><p>If you are in immediate danger, seek emergency medical assistance first. This form sends an urgent request to clinic staff.</p><div id="emergencyMessage"></div><div class="form-grid"><label>Name<input id="emName"></label><label>Phone<input id="emPhone"></label><label class="full">What is happening?<textarea id="emCondition"></textarea></label></div><button class="danger" onclick="sendEmergency()">Contact Clinic Staff</button> <button class="secondary" onclick="goHome()">Back to Home</button></div></section>
+
+<section id="dashboard" class="page"><div class="dashboard"><div class="dash-head"><div><h1 id="welcome"></h1><div id="identity" class="identity"></div></div><div><button id="logoutBtn" class="outline" onclick="logout()">Logout</button> <button class="outline" onclick="goHome()">⌂ Home</button></div></div><div id="patientDashboard" class="hidden"></div><div id="staffDashboard" class="hidden"></div><div id="doctorDashboard" class="hidden"></div><div id="adminDashboard" class="hidden"></div></div></section>
+</main>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div id="modalContent" class="modal-card"></div></div>
+
+<footer><div class="footer-brand"><div class="logo-mark small-logo"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 86V22M43 24h14M50 29c-13 0-21 8-18 17 3 9 15 8 18 18 3 10-4 17-13 20M50 29c13 0 21 8 18 17-3 9-15 8-18 18-3 10 4 17 13 20M43 86h14" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M38 20c-12-11-25-6-27 4 10-2 17 1 23 7M62 20c12-11 25-6 27 4-10-2-17 1-23 7" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="15" r="4" fill="currentColor"/></svg></div><div><b>BEULAH MEDICAL CLINIC</b><span>We Care • God Heals</span></div></div><p>Kajola off Oda Road, Akure, Ondo State</p><small>© 2026 Beulah Medical Clinic. All rights reserved.</small></footer>
+<script src="ads.js?v=20260826-ads-1"></script>
+<script src="app.js?v=20260826-final-ads-1"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "users": [
+    {
+      "id": "USR-ADMIN-001",
+      "role": "admin",
+      "firstName": "Clinic",
+      "lastName": "Administrator",
+      "email": "admin@beulah.test",
+      "passwordHash": "61a54c9708ad9db18e1d7805d197663d:18b76965902e15fb773eba13880da7cdd5d8cee6ff00d9922671b78587a9f374e6d6288b3241c5b3356ff642cf47f094ff79ce1b0426ced65434628ac00a9e30",
+      "adminId": "ADMIN-001"
+    },
+    {
+      "id": "USR-STAFF-001",
+      "role": "staff",
+      "firstName": "Clinic",
+      "lastName": "Staff",
+      "email": "staff@beulah.test",
+      "passwordHash": "654ee131f1584b061919db67ffa9bddb:8e3dc7d9af668d443cd6fe7fca202875f0c75754c6f1aed45892fa4db75b49e8d528b5076287d5d92105070e2cb0b2fce14d99f828e83856347afe15b802ece9",
+      "staffId": "STAFF-001"
+    },
+    {
+      "id": "USR-DOCTOR-001",
+      "role": "doctor",
+      "firstName": "Clinic",
+      "lastName": "Doctor",
+      "email": "doctor@beulah.test",
+      "passwordHash": "5318bc6450fb698933ad4075c4e7aa88:6ccb1bd3872f7c6a2c8818fa0a0265e5a420dd767fbbd953fc4d4039c23e27c194115ce3afe00ca5e9143d33e3a3d7839e2328bfb42cad25bd530fae3e697315",
+      "doctorId": "DOC-001"
+    }
+  ],
+  "appointments": [],
+  "vitals": [],
+  "prescriptions": [],
+  "payments": [],
+  "consents": [],
+  "emergencies": [],
+  "audit": [
+    {
+      "id": "AUD-C58BC43770",
+      "actor": "USR-ADMIN-001",
+      "action": "LOGIN",
+      "target": "",
+      "at": "2026-08-26T21:23:37.112Z"
+    }
+  ]
+}
