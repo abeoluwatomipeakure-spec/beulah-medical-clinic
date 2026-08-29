@@ -32,14 +32,15 @@ Staff registration requires:
 One patient owns the Personal Card Number.
 
 ### Family Card
-Several separate patient records can share the same Family Card Number and Family Card Name. Each family member still has a separate internal patient record and their own password.
+Several separate patient records can share the same Family Card Number and Family Card Name. Each family member still has a separate internal patient record. This prototype does not assign passwords to patients.
 
 The same number is allowed to exist once as a Personal Card and also as a Family Card because the **Card Type is part of the identity**.
 
 Patient login therefore asks for:
 - Card Number
 - Card Type
-- Password
+
+**Patients do not use or receive passwords in this build.**
 
 Staff/Doctor/Administrator login asks for:
 - Clinic email
@@ -82,4 +83,4 @@ This local JSON build is for development/testing. A real deployment should use a
 Advertising is prepared but disabled by default. See `ADS-SETUP.md` to connect an approved provider. Ads are limited to public pages and kept away from private medical dashboards.
 
 
-Final rule: patients do not create, receive, or reset passwords. Staff registers the Personal/Family Card and patient record; patient access uses Card Number + Card Type. Staff, Doctor, and Administrator retain email/password authentication.
+Final rule: patients do not create, receive, or reset passwords. Staff registers the Personal/Family Card and patient record; patient access uses Card Number + Card Type. Staff, Doctor, and Administrator use email + password. Staff, Doctor, and Administrator retain email/password authentication.

@@ -29,8 +29,6 @@ function verifyPassword(password, stored) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-const LIMITS = { staff: 15, doctor: 5, admin: 3 };
-
 function initialDb() {
   return {
     users: [
@@ -44,7 +42,13 @@ function initialDb() {
     payments: [],
     consents: [],
     emergencies: [],
-    audit: []
+    audit: [],
+    departments: [],
+    tasks: [],
+    announcements: [],
+    expenses: [],
+    settings: { departmentsEnabled: false, chiefDoctorId: null },
+    traffic: { visitors: 0, pageViews: 0 }
   };
 }
 
@@ -54,9 +58,11 @@ function readDb() {
   let db;
   try { db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
   catch { db = initialDb(); }
-  for (const collection of ['users', 'appointments', 'vitals', 'prescriptions', 'payments', 'consents', 'emergencies', 'audit']) {
+  for (const collection of ['users', 'appointments', 'vitals', 'prescriptions', 'payments', 'consents', 'emergencies', 'audit', 'departments', 'tasks', 'announcements', 'expenses']) {
     if (!Array.isArray(db[collection])) db[collection] = [];
   }
+  if (!db.settings || typeof db.settings !== 'object') db.settings = { departmentsEnabled: false, chiefDoctorId: null };
+  if (!db.traffic || typeof db.traffic !== 'object') db.traffic = { visitors: 0, pageViews: 0 };
   if (!db.users.some(u => u.role === 'admin')) {
     db.users.unshift({ id: 'USR-ADMIN-001', role: 'admin', firstName: 'Clinic', lastName: 'Administrator', email: 'admin@beulah.test', passwordHash: hashPassword('Admin123!'), adminId: 'ADMIN-001' });
   }
@@ -109,6 +115,8 @@ function publicUser(user) {
   if (user.role === 'staff') result.staffId = user.staffId;
   if (user.role === 'doctor') result.doctorId = user.doctorId;
   if (user.role === 'admin') result.adminId = user.adminId;
+  result.active = user.active !== false;
+  result.mustReset = !!user.mustReset;
   return result;
 }
 function cardNumberOf(patient) { return String(patient.cardNumber || patient.patientId || '').toUpperCase(); }
@@ -171,6 +179,7 @@ async function api(req, res, pathname) {
         found = db.users.find(u => u.role === portal && (u.email || '').toLowerCase() === identifier && verifyPassword(b.password || '', u.passwordHash));
       }
       if (!found) return sendJSON(res, 401, { error: 'Invalid login details or portal.' });
+      if (found.active === false) return sendJSON(res, 403, { error: 'This account has been deactivated. Please contact the Administrator.' });
       setSession(res, found); audit(db, found.id, 'LOGIN'); writeDb(db);
       return sendJSON(res, 200, { user: publicUser(found), mustReset: !!found.mustReset });
     }
@@ -277,27 +286,124 @@ async function api(req, res, pathname) {
     }
 
     if (req.method === 'GET' && pathname === '/api/doctor/dashboard' && user.role === 'doctor') {
-      return sendJSON(res, 200, { patients: db.users.filter(u => u.role === 'patient').map(p => patientRecord(db, p)), emergencies: db.emergencies });
+      const appointments = db.appointments.map(a => ({ ...a, patient: publicUser(db.users.find(p => p.id === a.patientUserId)) })).sort((a,b) => String(a.date).localeCompare(String(b.date)));
+      const tasks = db.tasks.filter(t => t.assigneeId === user.id || t.createdBy === user.id).slice(-100).reverse();
+      const announcements = db.announcements.filter(a => ['Everyone','Doctors','HODs'].includes(a.audience)).slice(-50).reverse();
+      const doctorDepartments = db.departments.filter(d => Array.isArray(d.memberIds) && d.memberIds.includes(user.id) || d.hodId === user.id);
+      const chiefDoctor = db.users.find(d => d.id === db.settings.chiefDoctorId && d.role === 'doctor');
+      return sendJSON(res, 200, {
+        doctor: publicUser(user),
+        isChiefDoctor: !!chiefDoctor && chiefDoctor.id === user.id,
+        patients: db.users.filter(u => u.role === 'patient').map(p => patientRecord(db, p)),
+        appointments,
+        emergencies: db.emergencies,
+        tasks,
+        announcements,
+        departments: doctorDepartments,
+        consents: db.consents,
+        chiefDoctor: chiefDoctor ? publicUser(chiefDoctor) : null
+      });
     }
 
+    if (req.method === 'POST' && pathname === '/api/ai/chat' && ['admin','doctor','staff'].includes(user.role)) {
+      const b = await parseBody(req);
+      const message = clean(b.message, 4000);
+      if (!message) return sendJSON(res, 400, { error: 'Please enter a message.' });
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        const local = {
+          admin: 'Beulah AI is ready, but the AI service is not connected yet. I can still help you navigate the clinic system, but live AI responses require the server AI configuration.',
+          doctor: 'Beulah AI is ready for the Doctor Workspace, but the AI service is not connected yet. Live AI responses require the server AI configuration.',
+          staff: 'Beulah AI is ready for the Staff Workspace, but the AI service is not connected yet. Live AI responses require the server AI configuration.'
+        };
+        return sendJSON(res, 200, { reply: local[user.role], configured: false });
+      }
+      const context = { role: user.role, userId: user.id, name: `${user.firstName} ${user.lastName}`, clinic: 'Beulah Medical Clinic' };
+      const instructions = `You are Beulah AI, an assistant inside Beulah Medical Clinic. The current user is ${JSON.stringify(context)}. Respect role permissions. Do not diagnose, prescribe, or make clinical decisions. Do not reveal passwords, secrets, or information outside the user's authorization. Help with administrative, workflow, reporting, navigation, and patient-information summarization only when the user is authorized. If asked to change website content, prepare a draft and ask for Admin approval rather than claiming it was published.`;
+      const payload = { model: process.env.OPENAI_MODEL || 'gpt-5.6-luna', instructions, input: message, max_output_tokens: 700 };
+      const r = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify(payload) });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) return sendJSON(res, 502, { error: data.error?.message || 'AI service request failed.' });
+      const reply = data.output_text || (data.output || []).flatMap(x => x.content || []).map(x => x.text || '').filter(Boolean).join(' ').trim();
+      if (!reply) return sendJSON(res, 502, { error: 'AI service returned no text.' });
+      audit(db, user.id, 'AI_CHAT', 'Beulah AI'); writeDb(db);
+      return sendJSON(res, 200, { reply, configured: true });
+    }
 
     if (req.method === 'GET' && pathname === '/api/admin/dashboard' && user.role === 'admin') {
-      return sendJSON(res, 200, { users: db.users.map(publicUser), patients: db.users.filter(u => u.role === 'patient').map(p => patientRecord(db, p)), audit: db.audit.slice(-200).reverse(), appointments: db.appointments, payments: db.payments, limits: LIMITS });
+      const staff = db.users.filter(u => u.role === 'staff');
+      const doctors = db.users.filter(u => u.role === 'doctor');
+      return sendJSON(res, 200, { users: db.users.map(publicUser), patients: db.users.filter(u => u.role === 'patient').map(p => patientRecord(db, p)), audit: db.audit.slice(-200).reverse(), appointments: db.appointments, payments: db.payments, departments: db.departments, tasks: db.tasks, announcements: db.announcements.slice(-100).reverse(), expenses: db.expenses.slice(-200).reverse(), settings: db.settings, chiefDoctor: doctors.find(d => d.id === db.settings.chiefDoctorId) ? publicUser(doctors.find(d => d.id === db.settings.chiefDoctorId)) : null, counts: { staff: staff.length, doctors: doctors.length, activeStaff: staff.filter(u => u.active !== false).length, activeDoctors: doctors.filter(u => u.active !== false).length, patients: db.users.filter(u => u.role === 'patient').length } });
+    }
+
+    if (req.method === 'GET' && pathname === '/api/admin/control-center' && user.role === 'admin') {
+      return sendJSON(res, 200, { users: db.users.filter(u => ['staff','doctor','admin'].includes(u.role)).map(publicUser), departments: db.departments, tasks: db.tasks.slice(-200).reverse(), announcements: db.announcements.slice(-100).reverse(), expenses: db.expenses.slice(-200).reverse(), settings: db.settings, traffic: db.traffic, chiefDoctor: db.users.find(u => u.id === db.settings.chiefDoctorId) ? publicUser(db.users.find(u => u.id === db.settings.chiefDoctorId)) : null });
     }
 
     if (req.method === 'POST' && pathname === '/api/admin/create-user' && user.role === 'admin') {
       const b = await parseBody(req); const targetRole = ['staff', 'doctor'].includes(clean(b.role)) ? clean(b.role) : '';
       if (!targetRole || !clean(b.firstName) || !clean(b.lastName)) return sendJSON(res, 400, { error: 'Role, first name and last name are required.' });
       const count = db.users.filter(u => u.role === targetRole).length;
-      if (count >= LIMITS[targetRole]) return sendJSON(res, 409, { error: `The ${targetRole} limit of ${LIMITS[targetRole]} has been reached. Administrator must update the system limit before adding another.` });
       const email = clean(b.email, 200).toLowerCase();
       if (!email || db.users.some(u => u.email === email)) return sendJSON(res, 409, { error: 'That email is already in use.' });
       const temporaryPassword = crypto.randomBytes(8).toString('base64url');
-      const employee = { id: id('USR'), role: targetRole, firstName: clean(b.firstName, 80), lastName: clean(b.lastName, 80), email, passwordHash: hashPassword(temporaryPassword), createdAt: now(), mustReset: true };
+      const employee = { id: id('USR'), role: targetRole, firstName: clean(b.firstName, 80), lastName: clean(b.lastName, 80), email, passwordHash: hashPassword(temporaryPassword), createdAt: now(), mustReset: true, active: true, departmentIds: [] };
       if (targetRole === 'staff') employee.staffId = clean(b.employeeId, 80) || `STAFF-${String(count + 1).padStart(3,'0')}`;
       if (targetRole === 'doctor') employee.doctorId = clean(b.employeeId, 80) || `DOC-${String(count + 1).padStart(3,'0')}`;
       db.users.push(employee); audit(db, user.id, 'USER_CREATED', employee.id); writeDb(db);
       return sendJSON(res, 201, { user: publicUser(employee), temporaryPassword });
+    }
+
+    if (req.method === 'POST' && pathname === '/api/admin/user-status' && user.role === 'admin') {
+      const b = await parseBody(req); const target = db.users.find(u => u.id === clean(b.userId));
+      if (!target || !['staff','doctor'].includes(target.role)) return sendJSON(res, 404, { error: 'Staff or doctor not found.' });
+      target.active = b.active !== false;
+      audit(db, user.id, target.active ? 'USER_REACTIVATED' : 'USER_DEACTIVATED', target.id); writeDb(db);
+      return sendJSON(res, 200, { user: publicUser(target) });
+    }
+
+    if (req.method === 'POST' && pathname === '/api/admin/department' && user.role === 'admin') {
+      const b = await parseBody(req); const name = clean(b.name, 120);
+      if (!name) return sendJSON(res, 400, { error: 'Department name is required.' });
+      if (db.departments.some(d => d.name.toLowerCase() === name.toLowerCase())) return sendJSON(res, 409, { error: 'That department already exists.' });
+      const department = { id: id('DEPT'), name, type: clean(b.type, 50) || 'Custom', hodId: clean(b.hodId) || null, active: true, modules: Array.isArray(b.modules) ? b.modules.map(x => clean(x,60)).filter(Boolean).slice(0,30) : ['Dashboard','Tasks','Documents','Submissions','Reports','Statistics'], createdAt: now(), createdBy: user.id };
+      db.departments.push(department);
+      if (department.hodId) { const hod = db.users.find(u => u.id === department.hodId && ['staff','doctor'].includes(u.role)); if (hod) { hod.departmentIds = Array.isArray(hod.departmentIds) ? hod.departmentIds : []; if (!hod.departmentIds.includes(department.id)) hod.departmentIds.push(department.id); hod.hodDepartmentIds = Array.isArray(hod.hodDepartmentIds) ? hod.hodDepartmentIds : []; if (!hod.hodDepartmentIds.includes(department.id)) hod.hodDepartmentIds.push(department.id); } }
+      audit(db, user.id, 'DEPARTMENT_CREATED', department.id); writeDb(db); return sendJSON(res, 201, { department });
+    }
+
+    if (req.method === 'POST' && pathname === '/api/admin/department-assign' && user.role === 'admin') {
+      const b = await parseBody(req); const department = db.departments.find(d => d.id === clean(b.departmentId)); const target = db.users.find(u => u.id === clean(b.userId) && ['staff','doctor'].includes(u.role));
+      if (!department || !target) return sendJSON(res, 404, { error: 'Department or team member not found.' });
+      target.departmentIds = Array.isArray(target.departmentIds) ? target.departmentIds : []; if (!target.departmentIds.includes(department.id)) target.departmentIds.push(department.id);
+      if (b.isHod) { department.hodId = target.id; target.hodDepartmentIds = Array.isArray(target.hodDepartmentIds) ? target.hodDepartmentIds : []; if (!target.hodDepartmentIds.includes(department.id)) target.hodDepartmentIds.push(department.id); }
+      audit(db, user.id, 'DEPARTMENT_MEMBER_ASSIGNED', `${department.id}:${target.id}`); writeDb(db); return sendJSON(res, 200, { department, user: publicUser(target) });
+    }
+
+    if (req.method === 'POST' && pathname === '/api/admin/chief-doctor' && user.role === 'admin') {
+      const b = await parseBody(req); const doctor = db.users.find(u => u.id === clean(b.doctorId) && u.role === 'doctor');
+      if (!doctor) return sendJSON(res, 404, { error: 'Doctor not found.' });
+      db.settings.chiefDoctorId = doctor.id; audit(db, user.id, 'CHIEF_DOCTOR_ASSIGNED', doctor.id); writeDb(db); return sendJSON(res, 200, { doctor: publicUser(doctor) });
+    }
+
+    if (req.method === 'POST' && pathname === '/api/admin/settings' && user.role === 'admin') {
+      const b = await parseBody(req); if (typeof b.departmentsEnabled === 'boolean') db.settings.departmentsEnabled = b.departmentsEnabled; audit(db, user.id, 'ADMIN_SETTINGS_UPDATED', 'departmentsEnabled'); writeDb(db); return sendJSON(res, 200, { settings: db.settings });
+    }
+
+    if (req.method === 'POST' && pathname === '/api/admin/announcement' && user.role === 'admin') {
+      const b = await parseBody(req); if (!clean(b.title) || !clean(b.message)) return sendJSON(res, 400, { error: 'Title and message are required.' }); const item = { id:id('ANN'), title:clean(b.title,160), message:clean(b.message,3000), audience:clean(b.audience,80)||'Everyone', createdBy:user.id, createdAt:now() }; db.announcements.push(item); audit(db,user.id,'ANNOUNCEMENT_CREATED',item.id); writeDb(db); return sendJSON(res,201,{announcement:item});
+    }
+
+    if (req.method === 'POST' && pathname === '/api/admin/task' && user.role === 'admin') {
+      const b=await parseBody(req); if(!clean(b.title)||!clean(b.assigneeId)) return sendJSON(res,400,{error:'Task title and assignee are required.'}); const assignee=db.users.find(u=>u.id===clean(b.assigneeId)&&['staff','doctor','admin'].includes(u.role)); if(!assignee) return sendJSON(res,404,{error:'Assignee not found.'}); const task={id:id('TASK'),title:clean(b.title,180),description:clean(b.description,2500),assigneeId:assignee.id,departmentId:clean(b.departmentId)||null,priority:clean(b.priority,30)||'Normal',status:'Pending',createdBy:user.id,createdAt:now()}; db.tasks.push(task); audit(db,user.id,'TASK_CREATED',task.id); writeDb(db); return sendJSON(res,201,{task});
+    }
+
+    if (req.method === 'POST' && pathname === '/api/admin/expense' && user.role === 'admin') {
+      const b=await parseBody(req); const amount=Number(b.amount); if(!Number.isFinite(amount)||amount<0||!clean(b.description)) return sendJSON(res,400,{error:'Valid amount and description are required.'}); const expense={id:id('EXP'),amount,description:clean(b.description,250),departmentId:clean(b.departmentId)||null,createdAt:now(),createdBy:user.id}; db.expenses.push(expense); audit(db,user.id,'EXPENSE_RECORDED',expense.id); writeDb(db); return sendJSON(res,201,{expense});
+    }
+
+    if (req.method === 'POST' && pathname === '/api/admin/traffic' && user.role === 'admin') {
+      const b=await parseBody(req); db.traffic.visitors=Math.max(0,Number(b.visitors)||0); db.traffic.pageViews=Math.max(0,Number(b.pageViews)||0); writeDb(db); return sendJSON(res,200,{traffic:db.traffic});
     }
 
     if (req.method === 'POST' && pathname === '/api/auth/change-password') {
